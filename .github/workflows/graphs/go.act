@@ -16,8 +16,8 @@ nodes:
       x: 810
       y: 610
     inputs:
-      go-version: '1.25'
       check-latest: 'false'
+      go-version: '1.25'
   - id: build
     type: core/run@v1
     position:
@@ -31,16 +31,196 @@ nodes:
       x: 2600
       y: 420
     inputs:
-      values[0]: null
       color: fg_green
+      values[0]: null
   - id: core-string-fmt-v1-grapefruit-rabbit-sheep
     type: core/string-fmt@v1
     position:
       x: 2200
       y: 620
     inputs:
-      substitutes[0]: null
       fmt: 👉 %v
+      substitutes[0]: null
+  - id: notifox-alert
+    type: core/group@v1
+    position:
+      x: 1860
+      y: 250
+    inputs:
+      port-alert: some test message
+      port-api-key: NOTIFOX_KEY
+      port-audience: ${{ env.NOTIFOX_AUDIENCE }}
+      port-channel: ${{ env.NOTIFOX_CHANNEL }}
+    graph:
+      entry: group-inputs-notifox
+      nodes:
+        - id: group-inputs-notifox
+          type: core/group-inputs@v1
+          position:
+            x: 10
+            y: 210
+        - id: group-outputs-notifox
+          type: core/group-outputs@v1
+          position:
+            x: 1290
+            y: 60
+        - id: fmt-auth-header
+          type: core/string-fmt@v1
+          position:
+            x: 260
+            y: 140
+          inputs:
+            fmt: 'Authorization: Bearer %v'
+            substitutes[0]: null
+        - id: fmt-body-json
+          type: core/string-fmt@v1
+          position:
+            x: 260
+            y: 310
+          inputs:
+            fmt: '{"audience":"%v","channel":"%v","alert":"%v"}'
+            substitutes[0]: null
+            substitutes[1]: null
+            substitutes[2]: null
+        - id: arr-headers
+          type: core/string-array@v1
+          position:
+            x: 640
+            y: 140
+          inputs:
+            inputs[0]: 'Content-Type: application/json'
+            inputs[1]: null
+        - id: http-request
+          type: core/http@v1
+          position:
+            x: 990
+            y: 10
+          inputs:
+            body: null
+            header: []
+            method: post
+            url: https://api.notifox.com/alert
+      connections:
+        - src:
+            node: group-inputs-notifox
+            port: port-api-key
+          dst:
+            node: fmt-auth-header
+            port: substitutes[0]
+        - src:
+            node: group-inputs-notifox
+            port: port-audience
+          dst:
+            node: fmt-body-json
+            port: substitutes[0]
+        - src:
+            node: group-inputs-notifox
+            port: port-channel
+          dst:
+            node: fmt-body-json
+            port: substitutes[1]
+        - src:
+            node: group-inputs-notifox
+            port: port-alert
+          dst:
+            node: fmt-body-json
+            port: substitutes[2]
+        - src:
+            node: fmt-auth-header
+            port: result
+          dst:
+            node: arr-headers
+            port: inputs[1]
+        - src:
+            node: arr-headers
+            port: array
+          dst:
+            node: http-request
+            port: header
+        - src:
+            node: fmt-body-json
+            port: result
+          dst:
+            node: http-request
+            port: body
+        - src:
+            node: http-request
+            port: status_code
+          dst:
+            node: group-outputs-notifox
+            port: port-status
+        - src:
+            node: http-request
+            port: body
+          dst:
+            node: group-outputs-notifox
+            port: port-response
+      executions:
+        - src:
+            node: group-inputs-notifox
+            port: exec-in
+          dst:
+            node: http-request
+            port: exec
+        - src:
+            node: http-request
+            port: exec-success
+          dst:
+            node: group-outputs-notifox
+            port: exec-success
+        - src:
+            node: http-request
+            port: exec-err
+          dst:
+            node: group-outputs-notifox
+            port: exec-error
+      inputs:
+        exec-in:
+          exec: true
+          index: 0
+          name: ''
+          type: ''
+        port-alert:
+          index: 4
+          name: Alert Message
+          type: string
+        port-api-key:
+          index: 1
+          name: API Key
+          type: secret
+        port-audience:
+          index: 2
+          name: Audience
+          type: string
+        port-channel:
+          index: 3
+          name: Channel
+          type: string
+      outputs:
+        exec-error:
+          exec: true
+          index: 1
+          name: Error
+          type: ''
+        exec-success:
+          exec: true
+          index: 0
+          name: Success
+          type: ''
+        port-response:
+          index: 3
+          name: Response Body
+          type: stream
+        port-status:
+          index: 2
+          name: Status Code
+          type: number
+      info:
+        author: ''
+        version: ''
+        contact: ''
+        description: ''
+    label: Notifox
 connections:
   - src:
       node: core-string-fmt-v1-grapefruit-rabbit-sheep
@@ -81,6 +261,12 @@ executions:
       port: exec
   - src:
       node: build
+      port: exec-success
+    dst:
+      node: notifox-alert
+      port: exec-in
+  - src:
+      node: notifox-alert
       port: exec-success
     dst:
       node: core-print-v1-cat-koala-pear
