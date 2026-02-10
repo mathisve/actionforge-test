@@ -47,10 +47,10 @@ nodes:
       x: 1810
       y: 140
     inputs:
-      port-alert: some test message
-      port-api-key: NOTIFOX_KEY
-      port-audience: ${{ env.NOTIFOX_AUDIENCE }}
-      port-channel: ${{ env.NOTIFOX_CHANNEL }}
+      port-alert: build succeeded
+      port-api-key: NOTIFOX_API_KEY
+      port-audience: mathis
+      port-channel: sms
     graph:
       entry: group-inputs-notifox
       nodes:
