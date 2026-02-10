@@ -16,8 +16,8 @@ nodes:
       x: 810
       y: 610
     inputs:
-      check-latest: 'false'
       go-version: '1.25'
+      check-latest: 'false'
   - id: build
     type: core/run@v1
     position:
@@ -28,24 +28,24 @@ nodes:
   - id: core-print-v1-cat-koala-pear
     type: core/print@v1
     position:
-      x: 2600
+      x: 2580
       y: 420
     inputs:
-      color: fg_green
       values[0]: null
+      color: fg_green
   - id: core-string-fmt-v1-grapefruit-rabbit-sheep
     type: core/string-fmt@v1
     position:
       x: 2200
       y: 620
     inputs:
-      fmt: 👉 %v
       substitutes[0]: null
+      fmt: 👉 %v
   - id: notifox-alert
     type: core/group@v1
     position:
-      x: 1860
-      y: 250
+      x: 1810
+      y: 140
     inputs:
       port-alert: some test message
       port-api-key: NOTIFOX_KEY
